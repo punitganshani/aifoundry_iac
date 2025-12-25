@@ -14,9 +14,6 @@
 5.  **Environment Separation**: Prod and Non-Prod are always separated.
 6.  **Disaster Recovery**: DR is **opt-in and explicit**.
 
-### Vibe Rule
-> *Deny first, design later.*
-
 ### Governance Scope
 - **Prod**: Strict governance, safety default-on.
 - **Non-Prod**: Relaxed content safety, but infrastructure safety remains.
