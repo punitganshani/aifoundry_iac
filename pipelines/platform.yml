@@ -1,0 +1,60 @@
+name: Platform Governance
+
+on:
+  push:
+    paths:
+      - 'iac/platform/**'
+  workflow_dispatch:
+
+jobs:
+  deploy-policy:
+    runs-on: ubuntu-latest
+    env:
+      TF_VAR_resource_group_name: "rg-ai-foundry-prod"
+      TF_VAR_location: "eastus"
+      TF_VAR_tags: '{"Environment":"Prod","AppId":"App-001","Tier":"Gold","DataClassification":"Confidential","DR-Approved":"Yes"}'
+    steps:
+      - uses: actions/checkout@v2
+      - name: Terraform Init
+        run: terraform init
+        working-directory: iac/platform/mg-policy
+      - name: Terraform Apply
+        run: terraform apply -auto-approve
+        working-directory: iac/platform/mg-policy
+
+  deploy-network:
+    runs-on: ubuntu-latest
+    env:
+      TF_VAR_resource_group_name: "rg-ai-foundry-prod"
+      TF_VAR_location: "eastus"
+      TF_VAR_tags: '{"Environment":"Prod","AppId":"App-001","Tier":"Gold","DataClassification":"Confidential","DR-Approved":"Yes"}'
+    steps:
+      - uses: actions/checkout@v2
+      - name: Terraform Init
+        run: terraform init
+        working-directory: iac/platform/network
+      - name: Terraform Apply
+        run: terraform apply -auto-approve
+        working-directory: iac/platform/network
+
+  deploy-monitoring:
+    runs-on: ubuntu-latest
+    env:
+      TF_VAR_resource_group_name: "rg-ai-foundry-prod"
+      TF_VAR_location: "eastus"
+      TF_VAR_tags: '{"Environment":"Prod","AppId":"App-001","Tier":"Gold","DataClassification":"Confidential","DR-Approved":"Yes"}'
+    steps:
+      - uses: actions/checkout@v2
+      - name: Terraform Init
+        run: terraform init
+        working-directory: iac/platform/monitoring
+      - name: Terraform Apply
+        run: terraform apply -auto-approve
+        working-directory: iac/platform/monitoring
+
+  deploy-rbac:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Deploy RBAC
+        run: echo "Deploying RBAC definitions from iac/platform/rbac/definitions..."

@@ -1,0 +1,21 @@
+{
+    "Name": "AI Platform Admin",
+    "IsCustom": true,
+    "Description": "Can manage all AI resources and policies, but cannot access data plane by default.",
+    "Actions": [
+        "Microsoft.CognitiveServices/*",
+        "Microsoft.MachineLearningServices/*",
+        "Microsoft.Authorization/*/read",
+        "Microsoft.Resources/subscriptions/resourceGroups/read",
+        "Microsoft.Insights/alertRules/*"
+    ],
+    "NotActions": [
+        "Microsoft.Authorization/*/write",
+        "Microsoft.Authorization/*/delete"
+    ],
+    "DataActions": [],
+    "NotDataActions": [],
+    "AssignableScopes": [
+        "/providers/Microsoft.Management/managementGroups/Contoso-AI-Platform"
+    ]
+}

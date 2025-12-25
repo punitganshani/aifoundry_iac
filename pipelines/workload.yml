@@ -1,0 +1,48 @@
+name: Workload Deployment
+
+on:
+  workflow_dispatch:
+    inputs:
+      template:
+        description: 'Template to deploy'
+        required: true
+        default: 'project-genai-rag'
+      environment:
+        description: 'Target Environment'
+        required: true
+        default: 'sg-nonprod'
+
+jobs:
+  deploy-workload:
+    runs-on: ubuntu-latest
+    env:
+      TF_VAR_project_name: "my-genai-app03"
+      TF_VAR_location: "eastus"
+      TF_VAR_resource_group_name: "rg-ai-foundry-prod"
+      TF_VAR_tags: '{"Environment":"Prod","AppId":"App-001","Tier":"Gold","DataClassification":"Confidential","DR-Approved":"Yes","CostCenter":"CC-AI-Lab"}'
+    steps:
+      - uses: actions/checkout@v2
+      
+      - name: Fetch Hub Details
+        run: |
+          # Requires Azure Login
+          HUB_NAME="my-genai-app03-hub"
+          RG_NAME="rg-ai-foundry-prod"
+          
+          echo "Fetching details for Hub: $HUB_NAME in $RG_NAME"
+          
+          # Fetch IDs using Azure CLI
+          HUB_ID=$(az ml workspace show --name $HUB_NAME --resource-group $RG_NAME --query id -o tsv)
+          LAW_ID=$(az monitor log-analytics workspace show --resource-group $RG_NAME --workspace-name "${HUB_NAME}-law" --query id -o tsv)
+          AI_ID=$(az monitor app-insights component show --resource-group $RG_NAME --app "${HUB_NAME}-ai" --query id -o tsv)
+          
+          echo "TF_VAR_hub_id=$HUB_ID" >> $GITHUB_ENV
+          echo "TF_VAR_log_analytics_workspace_id=$LAW_ID" >> $GITHUB_ENV
+          echo "TF_VAR_application_insights_id=$AI_ID" >> $GITHUB_ENV
+
+      - name: Terraform Init
+        run: terraform init
+        working-directory: iac/foundry/templates/${{ github.event.inputs.template }}
+      - name: Terraform Apply
+        run: terraform apply -auto-approve
+        working-directory: iac/foundry/templates/${{ github.event.inputs.template }}

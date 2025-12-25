@@ -1,0 +1,24 @@
+name: Foundry Hub Deployment
+
+on:
+  push:
+    paths:
+      - 'iac/foundry/templates/foundry-hub/**'
+  workflow_dispatch:
+
+jobs:
+  deploy-hub:
+    runs-on: ubuntu-latest
+    env:
+      TF_VAR_resource_group_name: "rg-ai-foundry-prod"
+      TF_VAR_location: "eastus"
+      TF_VAR_hub_name: "my-genai-app03-hub"
+      TF_VAR_tags: '{"Environment":"Prod","AppId":"App-001","Tier":"Gold","DataClassification":"Confidential","DR-Approved":"Yes","CostCenter":"CC-Platform-Shared"}'
+    steps:
+      - uses: actions/checkout@v2
+      - name: Terraform Init
+        run: terraform init
+        working-directory: iac/foundry/templates/foundry-hub
+      - name: Terraform Apply
+        run: terraform apply -auto-approve
+        working-directory: iac/foundry/templates/foundry-hub

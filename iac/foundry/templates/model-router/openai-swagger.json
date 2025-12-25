@@ -1,0 +1,19 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "Azure OpenAI API",
+    "version": "2023-05-15"
+  },
+  "paths": {
+    "/completions": {
+      "post": {
+        "operationId": "createCompletion",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    }
+  }
+}
