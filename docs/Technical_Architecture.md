@@ -32,7 +32,7 @@ graph TD
             OpenAI[Azure OpenAI]
             Embed[Embedding Model]
             Phi4[Phi-4 Serverless]
-            RAI[RAI Safety Policy (Security Baseline)]
+            RAI["RAI Safety Policy (Security Baseline)"]
             Blocklist[Custom Blocklist]
             Router[Model Router]
             Storage[Storage Account]
