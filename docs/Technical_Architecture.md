@@ -10,7 +10,71 @@ The solution implements a **Hub-and-Spoke** model for AI services.
 *   **Hub**: Centralized, shared resources (OpenAI, Storage, Key Vault, ACR) managed by the Platform Team.
 *   **Spoke (Project)**: Application-specific resources (Search, Agent Tools) managed by App Teams.
 
-### Architecture Diagram
+### Runtime Architecture Diagram
+
+```mermaid
+graph TD
+    Client[User / Client App]
+    
+    subgraph "Azure Subscription (Governance Scope)"
+        direction TB
+        
+        Policy[Azure Policy]
+        RBAC[RBAC & Entra ID]
+        
+        subgraph "Virtual Network (vnet-ai-foundry)"
+            direction TB
+            
+            subgraph "Subnet: snet-apim"
+                Router[Model Router APIM]
+            end
+            
+            subgraph "Subnet: snet-compute"
+                Compute[Compute Instance / Agent]
+            end
+            
+            subgraph "Subnet: snet-private-endpoints"
+                PE_OpenAI[PE: OpenAI]
+                PE_Search[PE: Search]
+                PE_Hub[PE: Hub]
+            end
+        end
+
+        subgraph "AI Foundry Hub (Shared Resources)"
+            Hub[AI Foundry Hub]
+            OpenAI[Azure OpenAI]
+            RAI["RAI Safety Policy"]
+            Storage[Storage Account]
+            KV[Key Vault]
+            
+            OpenAI --- RAI
+            Hub -.->|Orchestrates| OpenAI
+            Hub -.->|Stores Data| Storage
+            Hub -.->|Stores Secrets| KV
+        end
+        
+        subgraph "AI Foundry Project (Workload)"
+            Project[AI Project]
+            Search[Azure AI Search]
+            
+            Project -.->|Linked to| Hub
+            Project -.->|Uses| Search
+        end
+    end
+
+    %% Traffic Flows
+    Client -->|1. Inference Request| Router
+    Router -->|2. Proxy| PE_OpenAI
+    PE_OpenAI -.->|Private Link| OpenAI
+    
+    Client -->|3. App Logic| Compute
+    Compute -->|4. RAG Retrieval| PE_Search
+    PE_Search -.->|Private Link| Search
+    
+    Compute -->|5. LLM Call| PE_OpenAI
+```
+
+### Deployment Architecture Diagram
 
 ```mermaid
 graph TD
@@ -32,7 +96,7 @@ graph TD
             OpenAI[Azure OpenAI]
             Embed[Embedding Model]
             Phi4[Phi-4 Serverless]
-            RAI["RAI Safety Policy (Security Baseline)"]
+            RAI["RAI Safety Policy"]
             Blocklist[Custom Blocklist]
             Router[Model Router]
             Storage[Storage Account]
