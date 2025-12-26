@@ -80,12 +80,48 @@ Cost control is built-in via Terraform and Azure Policy.
 
 ---
 
-## 4. Responsible AI & Safety
+## 4. Responsible AI Standard
 
-*   **Security Baseline Policy (`security-baseline`)**: High-severity thresholds for Hate, Sexual, Violence, and Self-Harm.
-*   **Prompt Shields**: Jailbreak and indirect attack protection enabled.
-*   **Blocklists**: Centralized "Financial Fraud Terms" blocklist.
-*   **Protected Material**: Detection enabled for copyrighted text/code.
+The platform enforces a "Safety First" approach using Azure AI Content Safety. These controls are applied at the **Hub level** and inherited by all deployments.
+
+### 4.1. Safety Baseline (`security-baseline`)
+The following content filters are enforced on all models (GPT-4o, etc.).
+
+| Filter Category | Severity Threshold | Action | Source |
+| :--- | :--- | :--- | :--- |
+| **Hate** | **Medium** | Block | Prompt & Completion |
+| **Sexual** | **Medium** | Block | Prompt & Completion |
+| **Violence** | **Medium** | Block | Prompt & Completion |
+| **Self-Harm** | **Medium** | Block | Prompt & Completion |
+| **Profanity** | N/A | Block | Prompt |
+
+> **Note:** "Medium" threshold means content classified as Medium or High severity is blocked. Only Low severity content is allowed. This is a strict baseline.
+
+### 4.2. Adversarial Protection
+To protect against manipulation and IP theft, the following shields are active:
+
+*   **Jailbreak Detection**: Blocks attempts to bypass safety rules (e.g., DAN, hypothetical scenarios).
+*   **Indirect Prompt Injection**: Blocks attacks embedded in documents/data processed by the model.
+*   **Protected Material**:
+    *   **Text**: Blocks known copyrighted text (e.g., song lyrics, book excerpts).
+    *   **Code**: Blocks known public source code to prevent license contamination.
+
+### 4.3. Custom Blocklists
+The platform supports domain-specific blocklists.
+*   **Financial Fraud**: Blocks terms related to "Ponzi schemes", "Guaranteed Returns", and known scam patterns.
+*   **Implementation**: Managed via `azapi_resource` in Terraform.
+
+### 4.4. Operational Gaps & Future Considerations
+The current implementation provides *technical* guardrails. The following *process* gaps must be addressed:
+
+1.  **Human Review Workflow**: Currently, blocked requests are logged but not reviewed.
+    *   *Action:* Establish a "Safety Review Board" to analyze false positives/negatives.
+2.  **Red Teaming**: No automated adversarial testing pipeline exists.
+    *   *Action:* Integrate **PyRIT** (Python Risk Identification Tool) into the CI/CD pipeline.
+3.  **Custom Classifiers**: The default filters may not catch business-specific risks (e.g., unapproved financial advice).
+    *   *Action:* Train and deploy custom Azure AI Content Safety classifiers.
+4.  **Groundedness Detection**: Hallucination detection is not currently enforced.
+    *   *Action:* Enable "Groundedness" checks in Content Safety once the feature is generally available in the region.
 
 ---
 

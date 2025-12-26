@@ -105,7 +105,33 @@ All critical PaaS services have **Public Network Access disabled** (or restricte
 
 ---
 
-## 3. GenAI RAG Pattern
+## 3. Identity & Access Management (RBAC)
+
+The solution uses a mix of **Custom Roles** for platform administration and **Built-in Roles** for developer access, adhering to the Principle of Least Privilege.
+
+### Custom Roles
+
+| Role Name | Scope | Description | Permissions |
+| :--- | :--- | :--- | :--- |
+| **AI Platform Admin** | Management Group | Manages AI resources and policies. **No data plane access.** | `Microsoft.CognitiveServices/*`<br>`Microsoft.MachineLearningServices/*`<br>`Microsoft.Insights/alertRules/*` |
+
+### Built-in Role Assignments
+
+| Role | Scope | Assignee | Purpose |
+| :--- | :--- | :--- | :--- |
+| **Azure AI Developer** | Foundry Hub | App Developers | Allows creation of Prompt Flows, connections, and project management. |
+| **Cognitive Services OpenAI Contributor** | Azure OpenAI | Hub MSI, App Developers | Full access to OpenAI models and inference APIs (Data Plane). |
+| **Key Vault Secrets User** | Key Vault | Hub MSI | Allows the Hub to retrieve secrets (e.g., connection strings) securely. |
+
+### Identity Flow
+1.  **User Identity:** Developers authenticate via Entra ID. Their permissions are scoped to specific Projects or the Hub via the `Azure AI Developer` role.
+2.  **Managed Identity (MSI):** The **AI Foundry Hub** uses a System-Assigned Managed Identity to communicate with dependent services (OpenAI, Key Vault, Storage).
+    *   *Hub -> OpenAI:* Authenticates via RBAC (`Cognitive Services OpenAI Contributor`).
+    *   *Hub -> Key Vault:* Authenticates via RBAC (`Key Vault Secrets User`).
+
+---
+
+## 4. GenAI RAG Pattern
 
 The standard pattern for "Chat with your Data" workloads:
 
@@ -132,7 +158,7 @@ The standard pattern for "Chat with your Data" workloads:
 
 ---
 
-## 4. Automation & Observability
+## 5. Automation & Observability
 
 ### Cost Automation
 *   **Resource:** `ai-governance-logic-stop-computes` (Logic App).
@@ -145,10 +171,24 @@ The standard pattern for "Chat with your Data" workloads:
 
 ---
 
-## 5. Implementation Gaps & Roadmap
+## 6. Implementation Gaps & Roadmap
 
 | Area | Requirement | Current State | Gap/Action |
 | :--- | :--- | :--- | :--- |
 | **Resilience** | Regional Redundancy | Single Region (East US), LRS Storage. | **Gap:** Need secondary region & GRS. |
 | **Security** | Fully Private | Public Access enabled for deployment ease. | **Gap:** Need Self-Hosted Agents. |
 | **ACR** | Network Rules | No explicit firewall rules. | **Gap:** Add `network_rules` to Terraform. |
+
+---
+
+## 7. Key Architecture Decisions (ADR)
+
+The following architectural decisions underpin the design of this solution.
+
+| Category | Decision | Context & Justification | Implications |
+| :--- | :--- | :--- | :--- |
+| **Architecture** | **Hub-and-Spoke for AI** | **Decision:** Centralize OpenAI, ACR, and Key Vault in a "Hub"; decentralize Search and Projects.<br>**Justification:** Optimizes cost (shared TPM/PTU), enforces central safety policies, and simplifies network management. | App teams cannot deploy their own LLMs; they must consume the Hub's endpoints. |
+| **Network** | **Single VNET Topology** | **Decision:** Use a single VNET with subnet segmentation instead of peered VNETs.<br>**Justification:** Reduces complexity for this reference implementation. | Production environments should likely migrate to a Peered VNET model (Hub VNET + Spoke VNETs) for better isolation. |
+| **Identity** | **Identity-Based Access** | **Decision:** Disable local auth (keys) where possible; rely on Entra ID and Managed Identities.<br>**Justification:** Eliminates credential leakage risk and provides a granular audit trail. | Applications must support Token-based authentication (DefaultAzureCredential). |
+| **Security** | **Public Control Plane** | **Decision:** Enable public network access for deployment operations but secure data plane via Private Endpoints.<br>**Justification:** Trade-off to allow standard GitHub Actions/DevOps agents to deploy without complex self-hosted runner setup. | **Risk:** Management plane is exposed. **Mitigation:** Strong RBAC and Entra ID MFA. |
+| **Safety** | **Centralized RAI** | **Decision:** Attach RAI policies to the Hub's OpenAI instance, not individual projects.<br>**Justification:** Ensures a consistent "safety baseline" across all applications; prevents app teams from bypassing safety controls. | Changes to safety thresholds affect all consumers of the Hub. |

@@ -11,7 +11,7 @@ resource "azurerm_cognitive_account_rai_policy" "security_policy" {
     name              = "Hate"
     filter_enabled    = true
     block_enabled     = true
-    severity_threshold = "High"
+    severity_threshold = "Medium"
     source            = "Prompt"
   }
 
@@ -19,7 +19,7 @@ resource "azurerm_cognitive_account_rai_policy" "security_policy" {
     name              = "Hate"
     filter_enabled    = true
     block_enabled     = true
-    severity_threshold = "High"
+    severity_threshold = "Medium"
     source            = "Completion"
   }
 
@@ -28,14 +28,14 @@ resource "azurerm_cognitive_account_rai_policy" "security_policy" {
     name              = "Sexual"
     filter_enabled    = true
     block_enabled     = true
-    severity_threshold = "High"
+    severity_threshold = "Medium"
     source            = "Prompt"
   }
   content_filter {
     name              = "Sexual"
     filter_enabled    = true
     block_enabled     = true
-    severity_threshold = "High"
+    severity_threshold = "Medium"
     source            = "Completion"
   }
 
@@ -44,14 +44,14 @@ resource "azurerm_cognitive_account_rai_policy" "security_policy" {
     name              = "Violence"
     filter_enabled    = true
     block_enabled     = true
-    severity_threshold = "High"
+    severity_threshold = "Medium"
     source            = "Prompt"
   }
   content_filter {
     name              = "Violence"
     filter_enabled    = true
     block_enabled     = true
-    severity_threshold = "High"
+    severity_threshold = "Medium"
     source            = "Completion"
   }
 
@@ -60,14 +60,14 @@ resource "azurerm_cognitive_account_rai_policy" "security_policy" {
     name              = "SelfHarm"
     filter_enabled    = true
     block_enabled     = true
-    severity_threshold = "High"
+    severity_threshold = "Medium"
     source            = "Prompt"
   }
   content_filter {
     name              = "SelfHarm"
     filter_enabled    = true
     block_enabled     = true
-    severity_threshold = "High"
+    severity_threshold = "Medium"
     source            = "Completion"
   }
   # Prompt Shields (Jailbreak & Indirect Attack)
