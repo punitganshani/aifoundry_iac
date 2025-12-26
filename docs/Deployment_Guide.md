@@ -37,10 +37,12 @@ You can customize the deployment using the following parameters:
 
 The infrastructure is defined in Terraform modules located in `iac/foundry/templates/`.
 
+> **Security Note:** The provided Terraform templates default to `public_network_access_enabled = true` for the Hub, Key Vault, and Storage to facilitate easy deployment from GitHub Actions or local machines. **For Production environments, you must set this to `false`** and use Self-Hosted Agents within the VNET.
+
 **Hub Configuration (`iac/foundry/templates/foundry-hub/`)**
 - **Models (`ai-services.tf`)**: Configure deployed models (e.g., GPT-4o, Phi-4 Serverless).
 - **Safety (`safety.tf`)**: Adjust Content Safety policies and RAI blocklists.
-- **Networking (`apim.tf`)**: Modify the APIM Model Router configuration.
+- **Networking (`main.tf` / `variables.tf`)**: Update `vnet_address_space` and subnet prefixes to match your Enterprise IPAM plan. **Ensure `snet-apim` is at least `/27`.**
 - **Access (`rbac.tf`)**: Update role assignments for the Hub.
 
 **Project Configuration (`iac/foundry/templates/project-genai-rag/`)**
@@ -70,7 +72,7 @@ resource "azurerm_cognitive_deployment" "gpt35" {
 
   sku {
     name     = "Standard"
-    capacity = 20 # 20k TPM
+    capacity = 20 # 20k Tokens Per Minute
   }
 }
 ```
@@ -145,3 +147,25 @@ To change the content safety thresholds (e.g., from "High" to "Medium"):
     source            = "Prompt"
   }
 ```
+
+## Troubleshooting
+
+### Common Issues
+
+#### 1. "Quota Exceeded" Error
+*   **Symptom**: Deployment fails with `Code="QuotaExceeded"`.
+*   **Cause**: The subscription does not have enough TPM quota for the requested model (e.g., GPT-4o) in the target region.
+*   **Fix**:
+    1.  Check quota in [Azure Portal](https://portal.azure.com/#view/Microsoft_Azure_CognitiveServices/CognitiveServicesMenuBlade/~/Quota).
+    2.  Request a quota increase.
+    3.  Or, reduce the `capacity` in `ai-services.tf`.
+
+#### 2. "PrincipalNotFound" Error
+*   **Symptom**: Role assignment fails with `PrincipalNotFound`.
+*   **Cause**: The Managed Identity for the Hub was just created, and Entra ID replication hasn't finished.
+*   **Fix**: Wait 1-2 minutes and re-run the deployment script.
+
+#### 3. "Public Network Access Denied"
+*   **Symptom**: Terraform cannot read/write to the Storage Account or Key Vault.
+*   **Cause**: The deployment machine is not on the allowed IP list, or public access is disabled.
+*   **Fix**: Ensure the deployment script is running from an agent with network line-of-sight, or temporarily enable `public_network_access_enabled = true` in the Terraform variables.

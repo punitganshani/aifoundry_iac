@@ -14,6 +14,8 @@
 5.  **Environment Separation**: Prod and Non-Prod are always separated.
 6.  **Disaster Recovery**: DR is **opt-in and explicit**.
 
+> **Note on Policy Enforcement:** The `deny-public-endpoints` policy (in `iac/platform/mg-policy`) conflicts with the default deployment scripts which enable public access for ease of setup. This policy should be assigned **after** initial deployment or with an exemption for the deployment agent.
+
 ### Governance Scope
 - **Prod**: Strict governance, safety default-on.
 - **Non-Prod**: Relaxed content safety, but infrastructure safety remains.
@@ -34,12 +36,13 @@ All resources must have the following tags for tracking and compliance:
 ### AI Platform Team
 **Role:** Owns Azure AI Foundry governance, shared AI services, and platform-wide standards.
 *   **Owns:** Model allow-lists, Responsible AI policies (Security Baseline), Architecture standards (Golden Paths).
+    *   **Allowed Models:** `gpt-4o`, `gpt-4`, `gpt-35-turbo`, `text-embedding-ada-002` (Enforced via Azure Policy).
 *   **Manages:** Shared Hub, Model Router, Centralized Cost Controls, Azure OpenAI Service.
 *   **Accountability:** Platform compliance posture, safe operation of shared AI services, and controlled evolution of policies.
 
 ### Model Ops Team
 **Role:** Responsible for the operational health and cost efficiency of AI models.
-*   **Responsibilities:** Receives cost alerts (80% warning, 100% critical), manages TPM allocations, optimizes router configurations.
+*   **Responsibilities:** Receives cost alerts (80% warning, 100% critical), manages Tokens Per Minute (TPM) allocations, optimizes router configurations.
 *   **Accountability:** Model performance, latency, and token efficiency.
 
 ### AI App Team
@@ -125,7 +128,52 @@ The current implementation provides *technical* guardrails. The following *proce
 
 ---
 
-## 5. Decision Rights
+## 5. Scaling Strategy: Multi-Project Architecture
+
+To support scaling from one to dozens of AI applications, the platform uses a **Hub-and-Spoke** topology. While the default is a shared Hub, specific requirements for **Data Sensitivity** or **Workload Criticality** may dictate dedicated resources.
+
+### 5.1. Project Archetypes
+We define standard archetypes to simplify onboarding and resource allocation:
+
+| Archetype | Use Case | Criticality | Sensitivity | Architecture Pattern |
+| :--- | :--- | :--- | :--- | :--- |
+| **Standard RAG** | Internal Chatbots, Q&A, Summarization | Low/Medium | Internal | **Shared Hub**: Uses shared Tokens Per Minute (TPM) quota and standard safety policies. |
+| **Mission Critical** | Customer-facing Bots, Real-time Agents | **High** (SLA Required) | Internal | **Dedicated Throughput**: Uses shared Hub but with **Provisioned Throughput Units (PTU)** or a dedicated Model Deployment to guarantee latency/capacity. |
+| **Sensitive / Regulated** | HR Data, PII, IP Generation | Medium/High | **High** (Confidential) | **Dedicated Hub**: Deploys a separate Hub and OpenAI instance to ensure complete data isolation and custom safety policies (e.g., zero data retention). |
+
+### 5.2. Resource Sharing vs. Isolation Matrix
+
+| Component | Standard Strategy | Critical Strategy | Sensitive Strategy |
+| :--- | :--- | :--- | :--- |
+| **Models (LLMs)** | Shared Standard Deployment | **Dedicated PTU Deployment** | Dedicated OpenAI Account |
+| **Vector Search** | Dedicated Service (Standard SKU) | Dedicated Service (High Performance) | Dedicated Service (CMK Encryption) |
+| **Safety Policies** | Inherited from Hub | Inherited from Hub | **Custom Policy** (Stricter/Specific) |
+| **Network** | Shared VNET | Shared VNET | **Isolated VNET** (Peered) |
+
+### 5.3. Quota Management & Capacity Planning
+
+#### Assignment Process
+Tokens Per Minute (TPM) are assigned via the **Terraform configuration** in the Hub.
+
+1.  **Initial Allocation**: New deployments receive a standard baseline (e.g., 10k TPM) defined in `iac/foundry/templates/foundry-hub/ai-services.tf`.
+2.  **Monitoring**: The **Model Ops Team** monitors utilization via Azure Monitor.
+3.  **Scaling Request**: If a project requires more capacity:
+    *   **Step 1**: Check subscription-level quota availability in the [Azure Portal](https://portal.azure.com/#view/Microsoft_Azure_CognitiveServices/CognitiveServicesMenuBlade/~/Quota).
+    *   **Step 2**: Update the `capacity` parameter in the Terraform `azurerm_cognitive_deployment` resource.
+    *   **Step 3**: Apply the Terraform change to update the deployment in-place.
+
+#### Reference Documentation
+*   **[Manage Azure OpenAI Service Quota](https://learn.microsoft.com/en-us/azure/ai-services/openai/how-to/quota)**: Official guide on understanding and requesting quota increases.
+*   **[Azure OpenAI Service Models](https://learn.microsoft.com/en-us/azure/ai-services/openai/concepts/models)**: Availability of models per region.
+*   **[Terraform: azurerm_cognitive_deployment](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/cognitive_deployment)**: Documentation for the IaC resource used to set TPM.
+
+*   **Baseline:** All Standard projects share the Hub's default Tokens Per Minute (TPM) pool.
+*   **Trigger for Dedication:** If a project consistently consumes >30% of the shared pool or requires <200ms latency guarantees, it is migrated to a **Mission Critical** archetype.
+*   **Chargeback:** Costs are tagged at the **Project Resource Group** level. Shared Hub costs are allocated based on token usage telemetry.
+
+---
+
+## 6. Decision Rights
 
 - **Model approval & routing rules**: AI Platform Team
 - **Use-case approval & business risk**: App Teams
@@ -134,7 +182,7 @@ The current implementation provides *technical* guardrails. The following *proce
 
 ---
 
-## 6. Cross-Cutting Governance Principles
+## 7. Cross-Cutting Governance Principles
 
 - **Production traffic must flow through the Model Router by default.**
 - **Platform compliance ≠ use-case compliance**:

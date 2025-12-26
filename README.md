@@ -6,9 +6,15 @@ This repository contains the reference implementation for a governed, secure, an
 
 ## 📚 Documentation
 
-*   **[Governance Framework](docs/Governance_Framework.md)**: The "Rule Book". Defines the core principles, team roles, responsibilities, and cost policies.
-*   **[Technical Architecture](docs/Technical_Architecture.md)**: The "Blueprints". Details the network topology, RAG patterns, and component diagrams.
-*   **[Deployment Guide](docs/Deployment_Guide.md)**: Instructions on how to deploy and configure the environment using the provided scripts and Terraform modules.
+### By Persona
+*   **For Infrastructure Engineers**: Start with the **[Deployment Guide](docs/Deployment_Guide.md)** to understand the Terraform modules and deployment scripts. Review **[Technical Architecture](docs/Technical_Architecture.md)** for network and RBAC details.
+*   **For AI Architects**: Review the **[Governance Framework](docs/Governance_Framework.md)** to understand the operating model, scaling strategy, and decision rights. Check the **[Technical Architecture](docs/Technical_Architecture.md)** for ADRs and patterns.
+*   **For AI Engineers**: Read the **[Governance Framework](docs/Governance_Framework.md)** to understand what services are available and how to request them. Refer to the **[Technical Architecture](docs/Technical_Architecture.md)** for connection details and RAG patterns.
+
+### Full Index
+*   **[Governance Framework](docs/Governance_Framework.md)**: The "Rule Book". Defines principles, roles, responsibilities, cost policies, and decision rights.
+*   **[Technical Architecture](docs/Technical_Architecture.md)**: The "Blueprints". Details the network topology, RAG patterns, automation logic, and implementation gaps.
+*   **[Deployment Guide](docs/Deployment_Guide.md)**: The "Manual". Instructions on how to deploy and configure the environment.
 
 ## 🎯 Project Philosophy
 
