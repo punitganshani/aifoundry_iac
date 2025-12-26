@@ -141,11 +141,13 @@ graph TD
 **Status:** Implemented (Single VNET Hub-Spoke)
 
 ### Topology
-*   **VNET:** `vnet-ai-foundry` (East US) - `10.0.0.0/16`
+*   **VNET:** `vnet-ai-foundry` (East US)
+    *   **Reference:** `10.0.0.0/16` (Default for standalone/demo)
+    *   **Enterprise:** In an ESLZ, this VNET acts as a **Spoke**. It should be assigned a smaller, non-overlapping CIDR (e.g., `/22` or `/24`) by your IPAM team. The `/16` size is excessive for most AI workloads and may conflict with Hub address spaces.
 *   **Subnets:**
-    *   `snet-private-endpoints` (`10.0.1.0/24`): Dedicated for PaaS Private Endpoints.
-    *   `snet-compute` (`10.0.2.0/24`): Hosting subnet for AI Compute Instances.
-    *   `snet-apim` (`10.0.3.0/24`): Dedicated subnet for API Management (Internal Mode).
+    *   `snet-private-endpoints` (Default: `10.0.1.0/24`): Dedicated for PaaS Private Endpoints.
+    *   `snet-compute` (Default: `10.0.2.0/24`): Hosting subnet for AI Compute Instances.
+    *   `snet-apim` (Default: `10.0.3.0/24`): Dedicated subnet for API Management (Internal Mode).
 
 ### Connectivity
 All critical PaaS services have **Public Network Access disabled** (or restricted) and are accessed via **Private Endpoints**.
